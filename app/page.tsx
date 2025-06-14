@@ -64,6 +64,15 @@ export default function Portfolio() {
     setIsMenuOpen(false);
   };
 
+  const handleDownloadCV = () => {
+    const link = document.createElement('a');
+    link.href = '/cv/MyResume.pdf';
+    link.download = 'MyResume.pdf';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const skills = [
     { name: 'React/Next.js' },
     { name: 'Node.js' },
@@ -299,7 +308,10 @@ export default function Portfolio() {
                   <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </button>
                 
-                <button className="group bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-4 rounded-lg font-semibold transition-all duration-300 border border-white/20 hover:border-red-500/50 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/10 flex items-center justify-center gap-2">
+                <button 
+                  onClick={handleDownloadCV}
+                  className="group bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-4 rounded-lg font-semibold transition-all duration-300 border border-white/20 hover:border-red-500/50 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/10 flex items-center justify-center gap-2"
+                >
                   <Download size={20} />
                   Download CV
                 </button>

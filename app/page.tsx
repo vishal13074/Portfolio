@@ -9,33 +9,40 @@ import {
   Github,
   Linkedin,
   Mail,
-  Menu,
   Palette,
-  Smartphone,
-  X
+  Smartphone
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { Navigation } from '../components/Navigation';
 
 // Dynamically import Spline to avoid SSR issues
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
-      <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
     </div>
   )
 });
 
 export default function Portfolio() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [mounted, setMounted] = useState(false);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
   useEffect(() => {
     setMounted(true);
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({
+        x: (e.clientX / window.innerWidth) * 100,
+        y: (e.clientY / window.innerHeight) * 100,
+      });
+    };
+    
     const handleScroll = () => {
       const sections = ['home', 'about', 'projects', 'contact'];
       const currentPosition = window.scrollY + 100;
@@ -52,8 +59,12 @@ export default function Portfolio() {
       }
     };
 
+    window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   const scrollToSection = (sectionId: string) => {
@@ -61,7 +72,6 @@ export default function Portfolio() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
-    setIsMenuOpen(false);
   };
 
   const handleDownloadCV = () => {
@@ -157,7 +167,7 @@ export default function Portfolio() {
   if (!mounted) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
@@ -165,88 +175,23 @@ export default function Portfolio() {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Navigation */}
-      <motion.nav 
-        initial={{ opacity: 0, y: -50 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-lg border-b border-gray-800/30"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <motion.div 
-              className="text-2xl font-bold bg-gradient-to-r from-white to-red-500 bg-clip-text text-transparent"
-              whileHover={{ scale: 1.05 }}
-            >
-              Portfolio
-            </motion.div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-8">
-              {['home', 'about', 'projects', 'contact'].map((section) => (
-                <button
-                  key={section}
-                  onClick={() => scrollToSection(section)}
-                  className={`capitalize transition-all duration-300 hover:text-red-500 ${
-                    activeSection === section ? 'text-red-500' : 'text-white'
-                  }`}
-                >
-                  {section}
-                </button>
-              ))}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Navigation */}
-        {isMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-black/90 backdrop-blur-lg border-t border-gray-800/30"
-          >
-            <div className="px-4 py-6 space-y-4">
-              {['home', 'about', 'projects', 'contact'].map((section) => (
-                <button
-                  key={section}
-                  onClick={() => scrollToSection(section)}
-                  className="block w-full text-left capitalize text-lg hover:text-red-500 transition-colors duration-300"
-                >
-                  {section}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </motion.nav>
+      <Navigation />
 
       {/* Hero Section */}
-      <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        {/* Clean Dark Background */}
-        <div className="absolute inset-0 z-0 bg-black"></div>
-
-        {/* Isolated spotlight for robot only */}
-        <div className="absolute inset-0 z-5">
-          <div className="absolute top-1/2 left-2/3 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full" 
-               style={{
-                 background: 'radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.4) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 75%)',
-                 filter: 'blur(60px)'
-               }}>
-          </div>
-        </div>
+      <section 
+        id="home" 
+        className="relative min-h-screen flex items-center justify-center overflow-hidden"
+        style={{
+          background: `radial-gradient(circle at ${mousePosition.x}% ${mousePosition.y}%, rgba(14, 165, 233, 0.15) 0%, transparent 50%)`,
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-950/20 to-black"></div>
 
         {/* Spline Model - Clean without spotlight effects */}
         <div className="absolute inset-0 z-10 pointer-events-none">
           <div className="relative w-full h-full ml-auto" style={{ marginLeft: '22%' }}>
             <Spline 
-              scene="https://prod.spline.design/7jmE3ZEhAIHbusiF/scene.splinecode"
+              scene="https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode"
               className="w-full h-full"
             />
           </div>
@@ -267,18 +212,18 @@ export default function Portfolio() {
                 transition={{ duration: 0.8 }}
                 className="space-y-4"
               >
-                <div className="text-red-600 font-semibold text-lg tracking-wider">
+                <div className="text-cyan-400 font-semibold text-lg tracking-wider">
                   Hello Everyone I'm
                 </div>
                 
                 <motion.h1 
+                  className="text-5xl lg:text-7xl font-bold text-white mb-6 leading-tight"
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.2 }}
-                  className="text-5xl sm:text-6xl lg:text-7xl font-bold leading-tight"
                 >
-                  <span className="block bg-gradient-to-r from-red-600 via-orange-100 to-white-500 bg-clip-text text-transparent">
-                    Vishal N
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white-800 to-cyan-400 animate-gradient">
+                   Vishal{' '} N
                   </span>
                 </motion.h1>
               </motion.div>
@@ -301,7 +246,7 @@ export default function Portfolio() {
               >
                 <button
                   onClick={() => scrollToSection('projects')}
-                  className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 px-8 py-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/25 flex items-center justify-center gap-2 relative overflow-hidden"
+                  className="group bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 px-8 py-4 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/25 flex items-center justify-center gap-2 relative overflow-hidden"
                 >
                   <span className="relative z-10">View My Work</span>
                   <ArrowRight className="group-hover:translate-x-1 transition-transform duration-300 relative z-10" size={20} />
@@ -310,10 +255,10 @@ export default function Portfolio() {
                 
                 <button 
                   onClick={handleDownloadCV}
-                  className="group bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-4 rounded-lg font-semibold transition-all duration-300 border border-white/20 hover:border-red-500/50 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/10 flex items-center justify-center gap-2"
+                  className="group bg-black/30 backdrop-blur-sm hover:bg-black/40 px-8 py-4 rounded-lg font-semibold transition-all duration-300 border border-cyan-400/30 hover:border-cyan-400 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-400/20 flex items-center justify-center gap-2 relative overflow-hidden glow-border-button"
                 >
-                  <Download size={20} />
-                  Download CV
+                  <Download size={20} className="relative z-10" />
+                  <span className="relative z-10">Download CV</span>
                 </button>
               </motion.div>
 
@@ -325,7 +270,7 @@ export default function Portfolio() {
                 className="flex gap-8 pt-8"
               >
                 <div className="text-center">
-                  <div className="text-1xl font-bold text-red-500 text-left">
+                  <div className="text-1xl font-bold text-cyan-500 text-left">
                     I build things for the web  <br />
                     from sleek frontends to powerful backends.
                   </div>
@@ -344,7 +289,7 @@ export default function Portfolio() {
           <motion.div 
             animate={{ y: [-20, 20, -20], rotate: [0, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
-            className="absolute top-1/4 left-1/6 text-red-500/30 text-6xl font-mono"
+            className="absolute top-1/4 left-2/8 text-cyan-500/30 text-6xl font-mono"
           >
             &lt;/&gt;
           </motion.div>
@@ -352,7 +297,7 @@ export default function Portfolio() {
           <motion.div 
             animate={{ y: [20, -20, 20], rotate: [0, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-            className="absolute top-3/4 right-1/6 text-red-500/20 text-4xl"
+            className="absolute top-3/4 right-1/6 text-blue-300/40 text-4xl"
           >
             ⚡
           </motion.div>
@@ -360,30 +305,17 @@ export default function Portfolio() {
           <motion.div 
             animate={{ y: [-15, 15, -15], x: [-10, 10, -10] }}
             transition={{ duration: 5, repeat: Infinity, delay: 2 }}
-            className="absolute top-1/2 right-2/4 text-red-500/25 text-5xl"
+            className="absolute top-1/2 right-2/4 text-cyan-500/40 text-5xl"
           >
             🚀
           </motion.div>
         </div>
 
-        {/* Enhanced Scroll Indicator */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-30"
-        >
-          <div className="flex flex-col items-center space-y-2">
-            <span className="text-sm text-gray-400 tracking-wider">SCROLL</span>
-            <div className="w-6 h-10 border-2 border-red-500/50 rounded-full flex justify-center relative">
-              <motion.div 
-                animate={{ y: [0, 12, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="w-1 h-3 bg-red-500 rounded-full mt-2"
-              />
-            </div>
-          </div>
-        </motion.div>
+        {/* Background Animated Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+        </div>
       </section>
 
       {/* About Section */}
@@ -397,7 +329,7 @@ export default function Portfolio() {
             className="text-center mb-16"
           >
             <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-              About <span className="text-red-500">Me</span>
+              About <span className="text-cyan-500">Me</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
               I'm a passionate Full Stack Developer with a strong foundation in building scalable, responsive web applications. I specialize in modern frontend and backend technologies, with growing expertise in Machine Learning and Computer Vision. 
@@ -414,8 +346,8 @@ export default function Portfolio() {
               className="space-y-6"
             >
 
-               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/5">
-                <Palette className="text-red-500 mb-4" size={32} />
+               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10">
+                <Palette className="text-cyan-500 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">UI/UX Design</h3>
                 <p className="text-gray-300 leading-relaxed">
                   Designing intuitive and beautiful user experiences with attention 
@@ -423,8 +355,8 @@ export default function Portfolio() {
                 </p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/5">
-                <Code className="text-red-500 mb-4" size={32} />
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10">
+                <Code className="text-blue-500 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">Frontend Development</h3>
                 <p className="text-gray-300 leading-relaxed">
                   Specialized in React, Next.js, and modern JavaScript frameworks. 
@@ -432,8 +364,8 @@ export default function Portfolio() {
                 </p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/5">
-                <Smartphone className="text-red-500 mb-4" size={32} />
+              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-400/10">
+                <Smartphone className="text-cyan-400 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">Backend Development</h3>
                 <p className="text-gray-300 leading-relaxed">
                   Specialized in Node.js, Express, and RESTful API design.
@@ -484,7 +416,7 @@ Building robust, scalable, and secure server-side applications.
             className="text-center mb-16"
           >
             <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-              Featured <span className="text-red-500">Projects</span>
+              Featured <span className="text-cyan-500">Projects</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-3xl mx-auto">
               A showcase of my recent work, featuring innovative solutions and 
@@ -500,13 +432,13 @@ Building robust, scalable, and secure server-side applications.
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8 }}
-                className="group relative rounded-2xl overflow-hidden"
+                className="group relative rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20"
               >
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-4">
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-4 z-10">
                   <button className="bg-white/20 p-3 rounded-full hover:bg-white/30 transition-colors duration-300">
                     <Github size={20} />
                   </button>
-                  <button className="bg-red-600 p-3 rounded-full hover:bg-red-700 transition-colors duration-300">
+                  <button className="bg-cyan-600 p-3 rounded-full hover:bg-cyan-700 transition-colors duration-300">
                     <ExternalLink size={20} />
                   </button>
                 </div>
@@ -516,7 +448,7 @@ Building robust, scalable, and secure server-side applications.
                   className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="p-6">
-                  <h3 className="text-xl font-bold mb-3 group-hover:text-red-500 transition-colors duration-300">
+                  <h3 className="text-xl font-bold mb-3 group-hover:text-cyan-500 transition-colors duration-300">
                     {project.title}
                   </h3>
                   <p className="text-gray-300 text-sm leading-relaxed mb-4">
@@ -526,7 +458,7 @@ Building robust, scalable, and secure server-side applications.
                     {project.tech.map((tech) => (
                       <span 
                         key={tech}
-                        className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-xs font-semibold"
+                        className="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold"
                       >
                         {tech}
                       </span>
@@ -550,7 +482,7 @@ Building robust, scalable, and secure server-side applications.
             className="text-center mb-16"
           >
             <h2 className="text-4xl sm:text-5xl font-bold mb-6">
-              Let's <span className="text-red-500">Connect</span>
+              Let's <span className="text-cyan-500">Connect</span>
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
               Ready to bring your ideas to life? Let's discuss your next project 
@@ -573,9 +505,9 @@ Building robust, scalable, and secure server-side applications.
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-white/10"
+                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20"
               >
-                <contact.icon className="text-red-500 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" size={32} />
+                <contact.icon className="text-cyan-500 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" size={32} />
                 <h3 className="text-xl font-bold mb-2">{contact.title}</h3>
                 <p className="text-gray-300">{contact.info}</p>
               </motion.a>
@@ -592,6 +524,44 @@ Building robust, scalable, and secure server-side applications.
           </p>
         </div>
       </footer>
+
+      {/* Custom CSS for glowing button border */}
+      <style jsx>{`
+        .glow-border-button {
+          position: relative;
+        }
+
+        .glow-border-button::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          padding: 2px;
+          background: linear-gradient(45deg, transparent, cyan, transparent, cyan, transparent);
+          background-size: 200% 200%;
+          border-radius: 8px;
+          mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+          mask-composite: xor;
+          animation: glow-border-rotate 3s linear infinite;
+          opacity: 0.7;
+        }
+
+        .glow-border-button:hover::before {
+          opacity: 1;
+          animation-duration: 2s;
+        }
+
+        @keyframes glow-border-rotate {
+          0% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
+          100% {
+            background-position: 0% 50%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

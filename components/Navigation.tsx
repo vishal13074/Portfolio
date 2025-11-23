@@ -125,7 +125,7 @@ export function Navigation() {
           {/* Right - Connect Button */}
           <button
             onClick={() => scrollToSection('contact')}
-            className={`px-6 py-2 rounded-full text-white text-sm font-medium transition-all duration-300 hover:scale-105 whitespace-nowrap pulse-animation ${
+            className={`px-6 py-2 rounded-full text-white text-sm font-medium transition-all duration-300 hover:scale-105 whitespace-nowrap pulse-animation cursor-pointer ${
               activeSection === 'contact' 
                 ? 'bg-gradient-to-r from-cyan-700 to-blue-800 shadow-lg shadow-cyan-500/60 drop-shadow-[0_0_12px_rgba(6,182,212,1)]' 
                 : 'bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/50 hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]'

@@ -3,6 +3,8 @@
 import { motion, useScroll, useTransform } from 'framer-motion';
 import {
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   Code,
   Download,
   ExternalLink,
@@ -14,22 +16,27 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
+import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Navigation } from '../components/Navigation';
+import { SplashScreen } from '../components/SplashScreen';
 
-// Dynamically import Spline to avoid SSR issues
+// Optimized Spline import with better caching
 const Spline = dynamic(() => import('@splinetool/react-spline'), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center">
-      <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin"></div>
-    </div>
-  )
+  loading: () => null // No loading state since preloading is done
 });
 
 export default function Portfolio() {
   const [activeSection, setActiveSection] = useState('home');
   const [mounted, setMounted] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [currentProject, setCurrentProject] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false);
+  const [projectsInView, setProjectsInView] = useState(true);
+  const [splineReady, setSplineReady] = useState(false);
   const { scrollY } = useScroll();
   const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
@@ -76,8 +83,8 @@ export default function Portfolio() {
 
   const handleDownloadCV = () => {
     const link = document.createElement('a');
-    link.href = '/cv/MyResume.pdf';
-    link.download = 'MyResume.pdf';
+    link.href = '/cv/Vishal Resume.pdf';
+    link.download = 'Vishal Resume.pdf';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -102,31 +109,31 @@ export default function Portfolio() {
       title: 'E-Commerce Platform',
       description: 'Full-stack e-commerce solution with modern UI/UX, payment integration, and admin dashboard.',
       tech: ['Next.js', 'TypeScript', 'Stripe', 'Tailwind'],
-      image: 'https://images.pexels.com/photos/230544/pexels-photo-230544.jpeg',
+      image: '/ecommerce.jpg',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
     {
-      title: 'AI Chat Bot',
-      description: 'Real-time chat application with AI integration, featuring modern design and seamless UX.',
-      tech: ['React', 'Node.js', 'Socket.io', 'OpenAI'],
-      image: 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg',
+      title: 'Ride IT',
+      description: 'Cycle Rental booking mobile application, featuring modern design and seamless UX.',
+      tech: ['Flutter', 'Node.js', 'Firebase'],
+      image: '/cool-bicycle-studio.jpg',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
     {
       title: '3D Portfolio Website',
       description: 'Interactive 3D portfolio with Spline integration, showcasing modern web development.',
-      tech: ['Next.js', 'Spline', 'Framer Motion', 'Three.js'],
-      image: 'https://images.pexels.com/photos/1779487/pexels-photo-1779487.jpeg',
+      tech: ['Next.js', 'Spline', 'Tailwind CSS'],
+      image: '/portfolio.jpg',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
     {
       title: 'Fitness Tracker App',
       description: 'Web app for tracking heartbeat, blood, spo2.',
-      tech: ['React Native', 'Firebase', 'python'],
-      image: 'https://fitnesscfgyms.com/wp-content/uploads/2021/10/fitness-center.jpeg',
+      tech: ['React', 'Firebase', 'python'],
+      image: '/fitness.avif',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
@@ -134,23 +141,16 @@ export default function Portfolio() {
       title: 'Parking Slot Detection',
       description: 'Robust parking slot detection implemented using YOLOv8 object detection with pretrained datasets.',
       tech: ['Python', 'YOLOv8'],
-      image: 'https://content.cogniteq.com/s3fs-public/2023-11/1600x800%203.png',
+      image: '/parking.avif',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
-    {
-      title: 'Task Recommendation System',
-      description: 'Task Recommendation System using Machine Learning (Emotion Detection) and Natural Language Processing.',
-      tech: ['React.js','Python'],
-      image: 'https://img.freepik.com/premium-vector/meditation-multitasking-businessman-practicing-yoga-man-sitting-lotus-pose-flat-vector-illustration-business-management-concentration-concept-banner-website-design-landing-web-page_179970-6576.jpg',
-      github: 'https://github.com',
-      demo: 'https://demo.com'
-    },
+    
     {
       title: 'Signature Detection',
       description: 'Robust parking slot detection implemented using YOLOv8 object detection with trained datasets.',
       tech: ['Python', 'YOLOv8-OBB'],
-      image: 'https://orbograph.com/wp-content/uploads/2021/02/7-Check-Fraud-Signature-Genuine.jpg',
+      image: '/signature.png',
       github: 'https://github.com',
       demo: 'https://demo.com'
     },
@@ -158,10 +158,97 @@ export default function Portfolio() {
       title: 'Travel Planner',
       description: 'Full-stack travel planning application with user authentication, itinerary management, and booking features.',
       tech: ['Next.js', 'MongoDB', 'Tailwind CSS', 'Auth0','API'],
-      image: 'https://media.istockphoto.com/id/1497396873/photo/ready-for-starting-my-beach-holiday.jpg?s=612x612&w=0&k=20&c=Rfb7IbYAZR1hNTF6KUDYq8CVu9Yr4wRgK2VLZIZyORY=',
+      image: '/travel.jpg',
       demo: 'https://demo.com'
     },
   ];
+
+  const nextProject = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setUserInteracted(true); // User manually navigated
+    setCurrentProject((prev) => (prev + 1) % projects.length);
+    setTimeout(() => setIsTransitioning(false), 100);
+  };
+
+  const prevProject = () => {
+    if (isTransitioning) return;
+    setIsTransitioning(true);
+    setUserInteracted(true); // User manually navigated
+    setCurrentProject((prev) => (prev - 1 + projects.length) % projects.length);
+    setTimeout(() => setIsTransitioning(false), 100);
+  };
+
+  const goToProject = (index: number) => {
+    if (isTransitioning || index === currentProject) return;
+    setIsTransitioning(true);
+    setUserInteracted(true); // User manually navigated
+    setCurrentProject(index);
+    setTimeout(() => setIsTransitioning(false), 100);
+  };
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        prevProject();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        nextProject();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isTransitioning]);
+
+  // Resume auto-movement after user interaction
+  useEffect(() => {
+    if (!userInteracted) return;
+
+    const resumeTimer = setTimeout(() => {
+      setUserInteracted(false);
+    }, 5000); // Resume auto-movement after 5 seconds
+
+    return () => clearTimeout(resumeTimer);
+  }, [userInteracted, currentProject]);
+
+  // Intersection Observer to detect if projects section is visible
+  useEffect(() => {
+    const projectsSection = document.getElementById('projects');
+    if (!projectsSection) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        setProjectsInView(entry.isIntersecting && entry.intersectionRatio > 0.3);
+      },
+      {
+        threshold: [0, 0.3, 0.7, 1],
+        rootMargin: '-10% 0px -10% 0px'
+      }
+    );
+
+    observer.observe(projectsSection);
+    return () => observer.disconnect();
+  }, [mounted]);
+
+  // Ultra smooth auto-advance with better pause conditions
+  useEffect(() => {
+    // Pause if: user is hovering, user interacted recently, or projects section not visible
+    if (isPaused || userInteracted || !projectsInView) return;
+    
+    const autoAdvance = setInterval(() => {
+      setCurrentProject((prev) => (prev + 1) % projects.length);
+    }, 1500);
+
+    return () => clearInterval(autoAdvance);
+  }, [isPaused, userInteracted, projectsInView]);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+  };
 
   // Don't render until mounted to avoid hydration issues
   if (!mounted) {
@@ -172,8 +259,22 @@ export default function Portfolio() {
     );
   }
 
+  // Show splash screen
+  if (showSplash) {
+    return <SplashScreen onComplete={handleSplashComplete} />;
+  }
+
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Preload links in head */}
+      <head>
+        <link rel="preload" href="/ecommerce.jpg" as="image" />
+        <link rel="preload" href="/cool-bicycle-studio.jpg" as="image" />
+        <link rel="preload" href="/portfolio.jpg" as="image" />
+        <link rel="preload" href="/fitness.avif" as="image" />
+        <link rel="preload" href="https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode" as="fetch" crossOrigin="anonymous" />
+      </head>
+
       {/* Navigation */}
       <Navigation />
 
@@ -187,12 +288,14 @@ export default function Portfolio() {
       >
         <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-950/20 to-black"></div>
 
-        {/* Spline Model - Clean without spotlight effects */}
+        {/* Instant-loading Spline Model */}
         <div className="absolute inset-0 z-10 pointer-events-none">
           <div className="relative w-full h-full ml-auto" style={{ marginLeft: '22%' }}>
             <Spline 
               scene="https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode"
               className="w-full h-full"
+              onLoad={() => setSplineReady(true)}
+              style={{ opacity: splineReady ? 1 : 0.7 }}
             />
           </div>
         </div>
@@ -223,7 +326,7 @@ export default function Portfolio() {
                   transition={{ duration: 0.8, delay: 0.2 }}
                 >
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-white-800 to-cyan-400 animate-gradient">
-                   Vishal{' '} N
+                   Vishal
                   </span>
                 </motion.h1>
               </motion.div>
@@ -294,10 +397,11 @@ export default function Portfolio() {
             &lt;/&gt;
           </motion.div>
           
+          {/* Left lightning bolt */}
           <motion.div 
             animate={{ y: [20, -20, 20], rotate: [0, -5, 0] }}
             transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-            className="absolute top-3/4 right-1/6 text-blue-300/40 text-4xl"
+            className="absolute top-3/4 left-1/6 text-blue-300/40 text-4xl"
           >
             ⚡
           </motion.div>
@@ -346,7 +450,7 @@ export default function Portfolio() {
               className="space-y-6"
             >
 
-               <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10">
+               <div className="about-card bg-white/5 backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/10 relative overflow-hidden glow-border-button">
                 <Palette className="text-cyan-500 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">UI/UX Design</h3>
                 <p className="text-gray-300 leading-relaxed">
@@ -355,7 +459,7 @@ export default function Portfolio() {
                 </p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10">
+              <div className="about-card bg-white/5 backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-blue-500/10 relative overflow-hidden glow-border-button">
                 <Code className="text-blue-500 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">Frontend Development</h3>
                 <p className="text-gray-300 leading-relaxed">
@@ -364,7 +468,7 @@ export default function Portfolio() {
                 </p>
               </div>
 
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-400/10">
+              <div className="about-card bg-white/5 backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400 rounded-2xl p-8 hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-400/10 relative overflow-hidden glow-border-button">
                 <Smartphone className="text-cyan-400 mb-4" size={32} />
                 <h3 className="text-2xl font-bold mb-3">Backend Development</h3>
                 <p className="text-gray-300 leading-relaxed">
@@ -381,7 +485,7 @@ Building robust, scalable, and secure server-side applications.
               transition={{ duration: 0.8 }}
               className="space-y-8"
             >
-              <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300">
+              <div className="about-card bg-white/5 backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400 rounded-2xl p-6 hover:bg-white/10 transition-all duration-300 relative overflow-hidden glow-border-button">
                 <h3 className="text-2xl font-bold mb-4">Skills & Expertise</h3>
                 <div className="grid grid-cols-2 gap-x-10 gap-y-5">
                   <div className="space-y-3">
@@ -407,7 +511,7 @@ Building robust, scalable, and secure server-side applications.
 
       {/* Projects Section */}
       <section id="projects" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/5">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, y: 50 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -424,49 +528,192 @@ Building robust, scalable, and secure server-side applications.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project, index) => (
-              <motion.div 
-                key={project.title}
-                initial={{ opacity: 0, y: 50 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.8 }}
-                className="group relative rounded-2xl overflow-hidden bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all duration-300 hover:shadow-2xl hover:shadow-cyan-500/20"
-              >
-                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center space-x-4 z-10">
-                  <button className="bg-white/20 p-3 rounded-full hover:bg-white/30 transition-colors duration-300">
-                    <Github size={20} />
-                  </button>
-                  <button className="bg-cyan-600 p-3 rounded-full hover:bg-cyan-700 transition-colors duration-300">
-                    <ExternalLink size={20} />
-                  </button>
-                </div>
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-3 group-hover:text-cyan-500 transition-colors duration-300">
-                    {project.title}
-                  </h3>
-                  <p className="text-gray-300 text-sm leading-relaxed mb-4">
-                    {project.description}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {project.tech.map((tech) => (
-                      <span 
-                        key={tech}
-                        className="bg-cyan-500/20 text-cyan-400 px-3 py-1 rounded-full text-xs font-semibold"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+          {/* 3D Card Carousel */}
+          <div 
+            className="relative h-[600px] flex items-center justify-center perspective-1000"
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            tabIndex={0}
+          >
+            <div className="relative w-full max-w-6xl">
+              {projects.map((project, index) => {
+                // Ultra smooth position calculation
+                let offset = index - currentProject;
+                
+                // Seamless circular wrapping
+                if (offset > projects.length / 2) {
+                  offset = offset - projects.length;
+                } else if (offset < -projects.length / 2) {
+                  offset = offset + projects.length;
+                }
+                
+                const absOffset = Math.abs(offset);
+                const isActive = index === currentProject;
+                const isVisible = absOffset <= 3;
+                
+                return (
+                  <motion.div
+                    key={index}
+                    className="absolute top-1/2 left-1/2 cursor-pointer"
+                    style={{
+                      transformStyle: 'preserve-3d',
+                      zIndex: isActive ? 25 : Math.max(1, 20 - absOffset),
+                    }}
+                    animate={{
+                      x: `${offset * 280 - 200}px`,
+                      y: '-50%',
+                      rotateY: offset * -12,
+                      rotateX: absOffset * 1.5,
+                      scale: isActive ? 1 : Math.max(0.7, 1 - absOffset * 0.1),
+                      opacity: isVisible ? (absOffset > 2 ? 0.2 : 1) : 0,
+                    }}
+                    transition={{
+                      type: "tween",
+                      duration: 0.8,
+                      ease: [0.25, 0.1, 0.25, 1], // Custom cubic bezier for smoothness
+                    }}
+                    onClick={() => goToProject(index)}
+                  >
+                    <div 
+                      className="w-[400px] h-[500px] rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-black border border-cyan-500/20 shadow-2xl relative group"
+                      style={{
+                        transform: `rotateY(${offset * 2}deg)`,
+                        transition: 'transform 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                      }}
+                    >
+                      {/* Project Image with Correction */}
+                      <div className="absolute inset-0">
+                        <ImageWithFallback
+                          src={project.image}
+                          alt={project.title}
+                          className="project-image"
+                          style={{ 
+                            filter: isActive ? 'none' : 'brightness(0.7) saturate(0.8)',
+                            transition: 'filter 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)'
+                          }}
+                        />
+                        <div 
+                          className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-black/20"
+                          style={{ 
+                            opacity: isActive ? 0.7 : 0.9,
+                            transition: 'opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1)'
+                          }}
+                        />
+                      </div>
+
+                      {/* Project Title */}
+                      <div className="absolute bottom-6 left-6 right-6 z-20">
+                        <h3 
+                          className="text-2xl font-bold text-white mb-2"
+                          style={{
+                            transition: 'transform 0.3s ease',
+                            transform: isActive ? 'translateY(0)' : 'translateY(5px)'
+                          }}
+                        >
+                          {project.title}
+                        </h3>
+                        
+                        {/* Ultra smooth details transition */}
+                        <div
+                          style={{
+                            opacity: isActive ? 1 : 0,
+                            transform: `translateY(${isActive ? 0 : 10}px)`,
+                            transition: 'opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)',
+                            height: isActive ? 'auto' : 0,
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {isActive && (
+                            <div>
+                              <p 
+                                className="text-gray-300 text-sm mb-4 line-clamp-3"
+                                style={{
+                                  transition: 'opacity 0.4s ease 0.2s',
+                                  opacity: isActive ? 1 : 0
+                                }}
+                              >
+                                {project.description}
+                              </p>
+                              
+                              {/* Tech Stack */}
+                              <div 
+                                className="flex flex-wrap gap-2 mb-4"
+                                style={{
+                                  transition: 'opacity 0.4s ease 0.3s',
+                                  opacity: isActive ? 1 : 0
+                                }}
+                              >
+                                {project.tech.slice(0, 3).map((tech, i) => (
+                                  <span 
+                                    key={tech}
+                                    className="bg-cyan-500/20 text-cyan-400 px-2 py-1 rounded text-xs backdrop-blur-sm"
+                                    style={{
+                                      transition: `opacity 0.3s ease ${0.4 + i * 0.1}s, transform 0.3s ease ${0.4 + i * 0.1}s`,
+                                      opacity: isActive ? 1 : 0,
+                                      transform: `translateY(${isActive ? 0 : 5}px)`
+                                    }}
+                                  >
+                                    {tech}
+                                  </span>
+                                ))}
+                              </div>
+
+                              {/* Action Buttons */}
+                              <div 
+                                className="flex space-x-3"
+                                style={{
+                                  transition: 'opacity 0.4s ease 0.5s, transform 0.4s ease 0.5s',
+                                  opacity: isActive ? 1 : 0,
+                                  transform: `translateY(${isActive ? 0 : 10}px)`
+                                }}
+                              >
+                                <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center gap-2">
+                                  <ExternalLink size={16} />
+                                  View
+                                </button>
+                                <button className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200 flex items-center gap-2 backdrop-blur-sm">
+                                  <Github size={16} />
+                                  Code
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Glow effect for active card */}
+                      <div
+                        className="absolute inset-0 rounded-2xl border-2 border-cyan-500/40 shadow-lg shadow-cyan-500/50 pointer-events-none"
+                        style={{
+                          opacity: isActive ? 10 : 0,
+                          transform: `scale(${isActive ? 1 : 0.98})`,
+                          transition: 'opacity 0.6s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.6s cubic-bezier(0.25, 0.1, 0.25, 1)'
+                        }}
+                      />
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Navigation Controls Below Carousel */}
+          <div className="flex justify-center items-center space-x-5 mt-8">
+            <button
+              onClick={prevProject}
+              className="bg-black/50 hover:bg-black/70 text-cyan-400 p-4 rounded-full transition-all duration-300 backdrop-blur-sm border border-cyan-500/30 hover:scale-110 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/25"
+              title="Previous project (Left arrow key)"
+            >
+              <ChevronLeft size={28} />
+            </button>
+            
+            <button
+              onClick={nextProject}
+              className="bg-black/50 hover:bg-black/70 text-cyan-400 p-4 rounded-full transition-all duration-300 backdrop-blur-sm border border-cyan-500/30 hover:scale-110 hover:border-cyan-500/50 hover:shadow-lg hover:shadow-cyan-500/25"
+              title="Next project (Right arrow key)"
+            >
+              <ChevronRight size={28} />
+            </button>
           </div>
         </div>
       </section>
@@ -505,7 +752,7 @@ Building robust, scalable, and secure server-side applications.
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.8, delay: index * 0.1 }}
-                className="group bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20"
+                className="group bg-white/5 backdrop-blur-sm border border-cyan-400/30 hover:border-cyan-400 rounded-2xl p-8 text-center hover:bg-white/10 transition-all duration-300 transform hover:scale-105 hover:shadow-2xl hover:shadow-cyan-500/20 relative overflow-hidden glow-border-button"
               >
                 <contact.icon className="text-cyan-500 mx-auto mb-4 group-hover:scale-110 transition-transform duration-300" size={32} />
                 <h3 className="text-xl font-bold mb-2">{contact.title}</h3>
@@ -525,8 +772,24 @@ Building robust, scalable, and secure server-side applications.
         </div>
       </footer>
 
-      {/* Custom CSS for glowing button border */}
-      <style jsx>{`
+      {/* Custom CSS for glowing button border and custom cursor */}
+      <style jsx global>{`
+        html, body {
+          cursor: url('/mouse (2).png') 0 0, auto !important;
+        }
+        
+        *, *::before, *::after {
+          cursor: inherit !important;
+        }
+        
+        button, a, [role="button"], input[type="button"], input[type="submit"] {
+          cursor: url('/mouse (2).png') 0 0, pointer !important;
+        }
+
+        input[type="text"], input[type="email"], textarea {
+          cursor: url('/mouse (2).png') 0 0, text !important;
+        }
+
         .glow-border-button {
           position: relative;
         }
@@ -538,16 +801,24 @@ Building robust, scalable, and secure server-side applications.
           padding: 2px;
           background: linear-gradient(45deg, transparent, cyan, transparent, cyan, transparent);
           background-size: 200% 200%;
-          border-radius: 8px;
+          border-radius: inherit;
           mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           mask-composite: xor;
-          animation: glow-border-rotate 3s linear infinite;
-          opacity: 0.7;
+          -webkit-mask-composite: xor;
+          opacity: 0;
+          z-index: -1;
+          transition: opacity 0.3s ease;
+          will-change: opacity, background-position;
         }
 
         .glow-border-button:hover::before {
           opacity: 1;
-          animation-duration: 2s;
+          animation: glow-border-rotate 2s linear infinite;
+        }
+
+        /* Pause animations when not needed */
+        .glow-border-button:not(:hover)::before {
+          animation-play-state: paused;
         }
 
         @keyframes glow-border-rotate {
@@ -560,6 +831,65 @@ Building robust, scalable, and secure server-side applications.
           100% {
             background-position: 0% 50%;
           }
+        }
+
+        /* Reduce animation load */
+        @media (prefers-reduced-motion: reduce) {
+          .glow-border-button::before {
+            animation: none !important;
+            background: linear-gradient(45deg, transparent, cyan, transparent) !important;
+          }
+        }
+
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
+        .project-image {
+          border-radius: 0;
+        }
+
+        .project-image:hover {
+          transform: scale(1.02) !important;
+        }
+
+        /* Specific corrections for different image sources */
+        img[src*="pexels.com"] {
+          object-position: center top;
+        }
+
+        img[src*="freepik.com"] {
+          object-position: center center;
+        }
+
+        img[src*="fitnesscfgyms.com"] {
+          object-position: center 30%;
+        }
+
+        img[src*="cogniteq.com"] {
+          object-position: center center;
+        }
+
+        img[src*="orbograph.com"] {
+          object-position: center top;
+        }
+
+        img[src="/travel.avif"] {
+          object-position: center center;
+          object-fit: cover;
+        }
+
+        /* Fallback for any broken images */
+        img[src*="placeholder"] {
+          object-position: center center;
+          filter: grayscale(100%) brightness(0.8);
         }
       `}</style>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 export function Navigation() {
@@ -7,6 +8,7 @@ export function Navigation() {
   const [activeSection, setActiveSection] = useState('home');
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isModalClosing, setIsModalClosing] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,6 +63,19 @@ export function Navigation() {
     }, 500);
   };
 
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(!showMobileMenu);
+  };
+
+  const closeMobileMenu = () => {
+    setShowMobileMenu(false);
+  };
+
+  const scrollToSectionMobile = (id: string) => {
+    scrollToSection(id);
+    closeMobileMenu();
+  };
+
   const navItems = [
     { id: 'home', label: 'Home' },
     { id: 'about', label: 'About Me' },
@@ -69,14 +84,14 @@ export function Navigation() {
 
   return (
     <>
-      <nav className="fixed top-6 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="flex items-center gap-8 bg-black/30 backdrop-blur-xl px-10 py-3 rounded-full border border-cyan-500/20 shadow-2xl shadow-cyan-500/10 glow-nav">
+      <nav className="fixed top-3 sm:top-6 left-1/2 transform -translate-x-1/2 z-50 w-[95%] sm:w-auto max-w-full">
+        <div className="flex items-center justify-between sm:gap-6 lg:gap-8 bg-black/30 backdrop-blur-xl px-4 sm:px-6 lg:px-10 py-2.5 sm:py-3 rounded-full border border-cyan-500/20 shadow-2xl shadow-cyan-500/10 glow-nav">
           {/* Left - Profile */}
           <div 
-            className="flex items-center gap-3 group cursor-pointer"
+            className="flex items-center gap-2 sm:gap-3 group cursor-pointer flex-shrink-0"
             onClick={openModal}
           >
-            <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-cyan-500/30 transition-all group-hover:scale-110 group-hover:border-cyan-500/50 group-hover:shadow-lg group-hover:shadow-cyan-500/50">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden border-2 border-cyan-500/30 transition-all group-hover:scale-110 group-hover:border-cyan-500/50 group-hover:shadow-lg group-hover:shadow-cyan-500/50">
               <img
                 src="/profile.jpg"
                 alt="Vishal"
@@ -93,19 +108,30 @@ export function Navigation() {
                 V
               </div>
             </div>
-            <span className="text-white text-sm font-medium group-hover:text-cyan-300 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]">Vishal</span>
+            <span className="text-white text-xs sm:text-sm font-medium group-hover:text-cyan-300 transition-all duration-300 group-hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]">Vishal</span>
           </div>
 
-          {/* Separator */}
+          {/* Mobile Menu Button - Only visible on small screens */}
+          <button
+            onClick={toggleMobileMenu}
+            className="sm:hidden flex flex-col gap-1.5 p-2 rounded-lg hover:bg-cyan-500/10 transition-colors relative z-50"
+            aria-label="Toggle menu"
+          >
+            <span className={`w-6 h-0.5 bg-cyan-400 transition-all duration-300 ${showMobileMenu ? 'rotate-45 translate-y-2' : ''}`}></span>
+            <span className={`w-6 h-0.5 bg-cyan-400 transition-all duration-300 ${showMobileMenu ? 'opacity-0' : ''}`}></span>
+            <span className={`w-6 h-0.5 bg-cyan-400 transition-all duration-300 ${showMobileMenu ? '-rotate-45 -translate-y-2' : ''}`}></span>
+          </button>
+
+          {/* Separator - Hidden on mobile */}
           <div className="hidden md:block w-px h-5 bg-cyan-500/20 shadow-[0_0_4px_rgba(6,182,212,0.3)]"></div>
 
-          {/* Center - Navigation Links */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Center - Navigation Links - Hidden on small mobile */}
+          <div className="hidden sm:flex items-center gap-3 md:gap-6 lg:gap-8 flex-1 justify-center overflow-x-auto no-scrollbar">
             {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className={`transition-all duration-300 relative group px-3 py-2 text-sm whitespace-nowrap ${
+                className={`transition-all duration-300 relative group px-2 sm:px-3 py-2 text-xs sm:text-sm whitespace-nowrap flex-shrink-0 ${
                   activeSection === item.id 
                     ? 'text-cyan-400 drop-shadow-[0_0_8px_rgba(6,182,212,1)]' 
                     : 'text-gray-300 hover:text-cyan-300 hover:drop-shadow-[0_0_6px_rgba(6,182,212,0.6)]'
@@ -119,26 +145,80 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Separator */}
+          {/* Separator - Hidden on mobile */}
           <div className="hidden md:block w-px h-5 bg-cyan-500/20 shadow-[0_0_4px_rgba(6,182,212,0.3)]"></div>
 
-          {/* Right - Connect Button */}
+          {/* Right - Connect Button - Hidden on mobile when menu is open */}
           <button
             onClick={() => scrollToSection('contact')}
-            className={`px-6 py-2 rounded-full text-white text-sm font-medium transition-all duration-300 hover:scale-105 whitespace-nowrap pulse-animation cursor-pointer ${
+            className={`hidden sm:flex px-3 sm:px-4 lg:px-6 py-2 rounded-full text-white text-xs sm:text-sm font-medium transition-all duration-300 hover:scale-105 whitespace-nowrap pulse-animation cursor-pointer flex-shrink-0 ${
               activeSection === 'contact' 
                 ? 'bg-gradient-to-r from-cyan-700 to-blue-800 shadow-lg shadow-cyan-500/60 drop-shadow-[0_0_12px_rgba(6,182,212,1)]' 
                 : 'bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/50 hover:drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]'
             }`}
           >
-            Let's Connect
+            <span className="hidden sm:inline">Let's Connect</span>
+            <span className="sm:hidden">Connect</span>
           </button>
         </div>
       </nav>
 
-      {/* Profile Modal */}
+      {/* Mobile Menu Dropdown */}
+      {showMobileMenu && (
+        <div className="sm:hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-40 w-[90%] max-w-sm">
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-cyan-500/20 shadow-2xl shadow-cyan-500/10 overflow-hidden"
+          >
+            <div className="p-4 space-y-2">
+              {navItems.map((item, index) => (
+                <motion.button
+                  key={item.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  onClick={() => scrollToSectionMobile(item.id)}
+                  className={`w-full text-left px-4 py-3 rounded-xl transition-all duration-300 ${
+                    activeSection === item.id
+                      ? 'bg-cyan-500/20 text-cyan-400 shadow-lg shadow-cyan-500/20'
+                      : 'text-gray-300 hover:bg-cyan-500/10 hover:text-cyan-300'
+                  }`}
+                >
+                  {item.label}
+                </motion.button>
+              ))}
+              
+              <motion.button
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                onClick={() => {
+                  scrollToSection('contact');
+                  closeMobileMenu();
+                }}
+                className="w-full bg-gradient-to-r from-cyan-600 to-blue-700 hover:from-cyan-700 hover:to-blue-800 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg shadow-cyan-500/25"
+              >
+                Let's Connect
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Mobile Menu Backdrop */}
+      {showMobileMenu && (
+        <div 
+          className="sm:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
+          onClick={closeMobileMenu}
+        />
+      )}
+
+      {/* Profile Modal - Responsive */}
       {showProfileModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Backdrop */}
           <div 
             className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-all duration-500 ${
@@ -148,7 +228,7 @@ export function Navigation() {
           />
           
           {/* Modal Content */}
-          <div className={`relative z-10 bg-black/20 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-8 max-w-sm mx-4 shadow-2xl shadow-cyan-500/20 transition-all duration-500 ease-in-out glow-border ${
+          <div className={`relative z-10 bg-black/20 backdrop-blur-xl border border-cyan-500/30 rounded-3xl p-6 sm:p-8 max-w-sm w-full mx-4 shadow-2xl shadow-cyan-500/20 transition-all duration-500 ease-in-out glow-border ${
             isModalClosing 
               ? 'scale-0 opacity-0 -translate-y-20 blur-sm' 
               : 'scale-100 opacity-100 translate-y-0 blur-none'
@@ -167,7 +247,7 @@ export function Navigation() {
 
             {/* Profile Image */}
             <div className="flex flex-col items-center text-center">
-              <div className={`w-32 h-32 rounded-full overflow-hidden border-4 border-cyan-500/50 mb-6 shadow-lg shadow-cyan-500/30 transition-all duration-600 ease-in-out ${
+              <div className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-cyan-500/50 mb-4 sm:mb-6 shadow-lg shadow-cyan-500/30 transition-all duration-600 ease-in-out ${
                 isModalClosing 
                   ? 'scale-0 rotate-180 opacity-0' 
                   : 'scale-100 rotate-0 opacity-100 animate-coin-spin'
@@ -195,12 +275,12 @@ export function Navigation() {
                   ? 'opacity-0 translate-y-8 scale-90' 
                   : 'opacity-100 translate-y-0 scale-100 delay-300'
               }`}>
-                <h2 className="text-2xl font-bold text-white mb-2">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">
                     Vishal N
                   </span>
                 </h2>
-                <p className="text-gray-300 text-sm mb-4">Full Stack Developer</p>
+                <p className="text-gray-300 text-xs sm:text-sm mb-3 sm:mb-4">Full Stack Developer</p>
                 <p className="text-gray-400 text-xs">
                   Final Year Student at Easwari Engineering College
                 </p>
@@ -210,7 +290,7 @@ export function Navigation() {
         </div>
       )}
 
-      {/* Custom CSS for coin spin animation and glowing effects */}
+      {/* Custom CSS with responsive improvements */}
       <style jsx>{`
         @keyframes coin-spin {
           0% { 
@@ -318,6 +398,15 @@ export function Navigation() {
 
         .pulse-animation:hover {
           animation-play-state: paused;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
       `}</style>
     </>

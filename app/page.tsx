@@ -18,15 +18,16 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { ImageWithFallback } from '../components/ImageWithFallback';
 import { Navigation } from '../components/Navigation';
+import { OptimizedHero } from '../components/OptimizedHero';
 import { SplashScreen } from '../components/SplashScreen';
 
-  // Optimized Spline import with better caching
-  const Spline = dynamic(() => import('@splinetool/react-spline'), {
-    ssr: false,
-    loading: () => null // No loading state since preloading is done
-  });
+// Optimized Spline import with better caching
+const Spline = dynamic(() => import('@splinetool/react-spline'), {
+  ssr: false,
+  loading: () => null // No loading state since preloading is done
+});
 
-  export default function Portfolio() {
+export default function Portfolio() {
     const [activeSection, setActiveSection] = useState('home');
     const [mounted, setMounted] = useState(false);
     const [showSplash, setShowSplash] = useState(true);
@@ -37,6 +38,8 @@ import { SplashScreen } from '../components/SplashScreen';
     const [userInteracted, setUserInteracted] = useState(false);
     const [projectsInView, setProjectsInView] = useState(true);
     const [splineReady, setSplineReady] = useState(false);
+    const [splineError, setSplineError] = useState(false);
+    const sceneUrl = 'https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode';
     const { scrollY } = useScroll();
     const opacity = useTransform(scrollY, [0, 300], [1, 0]);
 
@@ -272,7 +275,7 @@ import { SplashScreen } from '../components/SplashScreen';
           <link rel="preload" href="/cool-bicycle-studio.jpg" as="image" />
           <link rel="preload" href="/portfolio.jpg" as="image" />
           <link rel="preload" href="/fitness.avif" as="image" />
-          <link rel="preload" href="https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode" as="fetch" crossOrigin="anonymous" />
+          <link rel="preload" href={sceneUrl} as="fetch" crossOrigin="anonymous" />
         </head>
 
         {/* Navigation */}
@@ -288,15 +291,20 @@ import { SplashScreen } from '../components/SplashScreen';
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-950/20 to-black"></div>
 
-          {/* Instant-loading Spline Model */}
-          <div className="absolute inset-0 z-10 pointer-events-none hidden lg:block">
+          {/* Instant-loading Spline Model (safe guarded) */}
+          <div className="absolute inset-0 z-10 pointer-events-none">
             <div className="relative w-full h-full ml-auto" style={{ marginLeft: '22%' }}>
-              <Spline 
-                scene="https://draft.spline.design/Myvn9n-8rErKmU8d/scene.splinecode"
-                className="w-full h-full"
-                onLoad={() => setSplineReady(true)}
-                style={{ opacity: splineReady ? 1 : 0.7 }}
-              />
+              {splineError ? (
+                // Fallback if the Spline scene fetch fails
+                <OptimizedHero />
+              ) : (
+                <Spline
+                  scene={sceneUrl}
+                  className="w-full h-full"
+                  onLoad={() => setSplineReady(true)}
+                  style={{ opacity: splineReady ? 1 : 0.7 }}
+                />
+              )}
             </div>
           </div>
 
@@ -384,7 +392,7 @@ import { SplashScreen } from '../components/SplashScreen';
             <motion.div 
               animate={{ y: [-20, 20, -20], rotate: [0, 5, 0] }}
               transition={{ duration: 4, repeat: Infinity }}
-              className="absolute top-1/4 left-[5%] sm:left-[12%] text-cyan-500/30 text-4xl sm:text-6xl font-mono"
+              className="absolute top-1/4 left-[2%] sm:left-[2%] text-cyan-500/30 text-4xl sm:text-6xl font-mono"
             >
               &lt;/&gt;
             </motion.div>
@@ -392,7 +400,7 @@ import { SplashScreen } from '../components/SplashScreen';
             <motion.div 
               animate={{ y: [20, -20, 20], rotate: [0, -5, 0] }}
               transition={{ duration: 3, repeat: Infinity, delay: 1 }}
-              className="absolute top-3/4 left-[8%] sm:left-1/6 text-blue-300/40 text-3xl sm:text-4xl"
+              className="absolute top-3/4 left-[2%] sm:left-1/6 text-blue-300/40 text-3xl sm:text-4xl"
             >
               ⚡
             </motion.div>
@@ -400,7 +408,7 @@ import { SplashScreen } from '../components/SplashScreen';
             <motion.div 
               animate={{ y: [-15, 15, -15], x: [-10, 10, -10] }}
               transition={{ duration: 5, repeat: Infinity, delay: 2 }}
-              className="absolute top-1/2 right-[10%] sm:right-2/4 text-cyan-500/40 text-4xl sm:text-5xl"
+              className="absolute top-1/4 right-[10%] sm:right-2/4 text-cyan-500/40 text-4xl sm:text-5xl"
             >
               🚀
             </motion.div>

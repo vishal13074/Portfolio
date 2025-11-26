@@ -138,7 +138,7 @@ export function Navigation() {
                 }`}
               >
                 {item.label}
-                <span className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-700 transition-all duration-300 ${
+                <span className={`absolute -bottom-0 left-0 h-0.5 bg-gradient-to-r from-cyan-500 to-blue-700 transition-all duration-300 ${
                   activeSection === item.id ? 'w-full shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'w-0 group-hover:w-full group-hover:shadow-[0_0_6px_rgba(6,182,212,0.6)]'
                 }`}></span>
               </button>
